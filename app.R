@@ -7,6 +7,7 @@ library(DT)
 library(rpivotTable)
 library(tibble)
 library(ggplot2)
+library(rhandsontable)
 
 ##Source Util Files
 
@@ -15,13 +16,5 @@ library(ggplot2)
 options(scipen=10)
 options(shiny.launch.browser = TRUE)
 
-ui <- navbarPage(
-  
-)
-
-server <- function(input, output) {
-  
-}
-
-shinyApp(ui = ui, server = server)
+shinyApp(ui = source("ui.R"), server = source("server.R"))
 
