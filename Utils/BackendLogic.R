@@ -46,6 +46,15 @@ WriteSQLData<-function(Source_DF,Target_DF,SQLDB="vault.db",mode=c("append","ove
   }
 }
 
+ModifySQLDB<-function(statement,SQLDB="vault.db"){
+  if(statement==""){stop("No Statement provided")}
+  require(RSQLite)
+  con<-dbConnect(drv=RSQLite::SQLite(),dbname=SQLDB)
+  dbSendQuery(con,statement)
+  dbDisconnect(con)
+  return(T)
+}
+
 ReadSQLFromFile<-function(filename,path=getwd()){
   return(paste0(readLines(paste(path,filename,sep="/"))))
 }
