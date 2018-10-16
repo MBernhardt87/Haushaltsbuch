@@ -55,30 +55,35 @@ function(input, output) {
     })
     observe({
       if(!is.null(input$NeuerKontoauszug)){
-        output$KontoauszugData<-renderDataTable({
+        output$KontoauszugData<-renderRHandsontable({
           input.tbl<-read_delim(input$NeuerKontoauszug$datapath,";", escape_double = FALSE, locale = locale(date_names = "de",decimal_mark = ",", grouping_mark = "."),trim_ws = TRUE)
           Column.mapping<-GetSQLData(paste("select QuellSpalte,ZielSpalte from tbl_parseZuordnung where Bank=(Select Bank from tbl_konto where Kontonummer=",input$Kontoauszug_Konto,")",sep=""),F)
           input.tbl<-input.tbl[,c(1,which(names(input.tbl) %in% Column.mapping$QuellSpalte))]
           colnames(input.tbl)<-c("Buchungsdatum",inner_join(tibble(QuellSpalte=names(input.tbl)),Column.mapping,by="QuellSpalte")$ZielSpalte)
           values[["Kontoauszug"]]<-input.tbl
-          datatable(input.tbl)
+          rhandsontable(input.tbl,width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
         })
       }
     })
-    observe({
+    observeEvent(input$ShowNA_Kontoauszug,{
       if(input$ShowNA_Kontoauszug=="Zeilen ohne Kategorie"){
-        if(is.null(values[["Kontoauszug"]]) | is.na(values[["Kontoauszug"]])){
+        if(is.null(values[["Kontoauszug"]])){
           showModal(modalDialog(title = "Kontoauszug","Es ist kein Kontoauszug geladen!",easyClose = T))
         } else {
-          output$KontoauszugData<-renderDataTable({
+          output$KontoauszugData<-renderRHandsontable({
             input.tbl<-values[["Kontoauszug"]]
-            input.tbl %>% filter(is.na(Schluessel))
+            rhandsontable(input.tbl %>% filter(is.na(Schluessel)),width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
           })
         }
       } else {
-        output$KontoauszugData<-renderDataTable({
-          values[["Kontoauszug"]]
+        print("triggered")
+        if(is.null(values[["Kontoauszug"]])){
+        } else {
+        values[["Kontoauszug"]][is.na(values[["Kontoauszug"]]$Schluessel),'Schluessel']<-hot_to_r(input$KontoauszugData)$Schluessel
+        output$KontoauszugData<-renderRHandsontable({
+          rhandsontable(values[["Kontoauszug"]],width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
         })
+        }
       }
     })
     observe({
@@ -87,7 +92,9 @@ function(input, output) {
         input.tbl<-input.tbl %>% mutate(Monat=month(dmy(Buchungsdatum)),Jahr=year(dmy(Buchungsdatum)), Kontonummer=input$Kontoauszug_Konto)
         LastDate<-GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1]
         if(!is.na(LastDate)){
-          
+          input.tbl$Buchungsdatum<-dmy(input.tbl$Buchungsdatum)
+          input.tbl<- input.tbl %>% filter(Buchungsdatum>dmy(LastDate))
+          input.tbl$Buchungsdatum<-as.character(input.tbl$Buchungsdatum)
         }
         if(WriteSQLData(input.tbl,"tbl_kontostand")){
           showModal(modalDialog(title = "Upload","Kontoauszug in Datenbank gespeichert!",easyClose = T))

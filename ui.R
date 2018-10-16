@@ -43,7 +43,7 @@ navbarPage("Haushaltsbuch",
                          ),
                          fluidRow(
                            column(width=12,
-                                  dataTableOutput("KontoauszugData")
+                                  rHandsontableOutput("KontoauszugData")
                                   )
                          )
                        )
