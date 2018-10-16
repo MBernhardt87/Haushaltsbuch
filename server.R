@@ -5,7 +5,7 @@ function(input, output) {
   ##Kontoverwaltung
     ## New Konto Tabelle generieren
     output$NewKontoData<-renderRHandsontable({
-      rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ=""))
+      rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ="",Anfangsbestand=0))
     })
     ## Datenbestand an Konto holen
     output$Kontos<-renderTable({
@@ -24,7 +24,7 @@ function(input, output) {
             })
             #updateSelectInput(session,inputId = "KontenListe",choices=GetSQLData("select Kontonummer from tbl_konto",F)[,1])
             output$NewKontoData<-renderRHandsontable({
-              rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ=""))
+              rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ="",Anfangsbestand=0))
             })
           } else {
             stop("Error adding Konto")
@@ -51,7 +51,7 @@ function(input, output) {
     output$Datenbestand<-renderText({
       minDate<-GetSQLData("select min(Buchungsdatum) from tbl_kontostand",F)
       maxDate<-GetSQLData("select max(Buchungsdatum) from tbl_kontostand",F)
-      paste("Es sind Daten vom",minDate,"bis",maxDate,"in der Datenbank")
+      paste("Es sind Daten vom",as_date(minDate[1,]),"bis",as_date(maxDate[1,]),"in der Datenbank")
     })
     observe({
       if(!is.null(input$NeuerKontoauszug)){
@@ -88,16 +88,16 @@ function(input, output) {
     })
     observe({
       if(input$UploadKontoauszug>0){
-        input.tbl<-values[["Kontoauszug"]]
+        input.tbl<-hot_to_r(input$KontoauszugData)
         input.tbl<-input.tbl %>% mutate(Monat=month(dmy(Buchungsdatum)),Jahr=year(dmy(Buchungsdatum)), Kontonummer=input$Kontoauszug_Konto)
-        LastDate<-GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1]
+        LastDate<-dmy(GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1])
+        input.tbl$Buchungsdatum<-dmy(input.tbl$Buchungsdatum)
         if(!is.na(LastDate)){
-          input.tbl$Buchungsdatum<-dmy(input.tbl$Buchungsdatum)
-          input.tbl<- input.tbl %>% filter(Buchungsdatum>dmy(LastDate))
-          input.tbl$Buchungsdatum<-as.character(input.tbl$Buchungsdatum)
+          input.tbl<- input.tbl %>% filter(Buchungsdatum>LastDate)
         }
         if(WriteSQLData(input.tbl,"tbl_kontostand")){
           showModal(modalDialog(title = "Upload","Kontoauszug in Datenbank gespeichert!",easyClose = T))
+          values[["Kontoauszug"]]<-NULL
         } else {
           stop("Error uploading File to DB")
         }
