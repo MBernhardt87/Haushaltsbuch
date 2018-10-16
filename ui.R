@@ -29,9 +29,15 @@ navbarPage("Haushaltsbuch",
               tabPanel("Kontoauszüge importieren",
                        fluidPage(
                          fluidRow(
-                           column(width=12,
+                           column(width=2,
                                   selectInput("Kontoauszug_Konto",label=NULL,choices=GetSQLData("select Kontonummer from tbl_konto",F)[,1]),
-                                  fileInput("NeuerKontoauszug",label=NULL),
+                                  fileInput("NeuerKontoauszug",label=NULL)
+                                  ),
+                           column(width=2,
+                                  strong(textOutput("Datenbestand"))
+                                  ),
+                           column(width=2,
+                                  radioButtons("ShowNA_Kontoauszug",label="Filter",choices = list("Alle Zeilen","Zeilen ohne Kategorie")),
                                   actionButton("UploadKontoauszug",label="Kontoauszug hochladen")
                                   )
                          ),

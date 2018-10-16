@@ -48,7 +48,11 @@ function(input, output) {
     })
   
   ## Kontoauszug importieren
-
+    output$Datenbestand<-renderText({
+      minDate<-GetSQLData("select min(Buchungsdatum) from tbl_kontostand",F)
+      maxDate<-GetSQLData("select max(Buchungsdatum) from tbl_kontostand",F)
+      paste("Es sind Daten vom",minDate,"bis",maxDate,"in der Datenbank")
+    })
     observe({
       if(!is.null(input$NeuerKontoauszug)){
         output$KontoauszugData<-renderDataTable({
@@ -62,12 +66,28 @@ function(input, output) {
       }
     })
     observe({
+      if(input$ShowNA_Kontoauszug=="Zeilen ohne Kategorie"){
+        if(is.null(values[["Kontoauszug"]]) | is.na(values[["Kontoauszug"]])){
+          showModal(modalDialog(title = "Kontoauszug","Es ist kein Kontoauszug geladen!",easyClose = T))
+        } else {
+          output$KontoauszugData<-renderDataTable({
+            input.tbl<-values[["Kontoauszug"]]
+            input.tbl %>% filter(is.na(Schluessel))
+          })
+        }
+      } else {
+        output$KontoauszugData<-renderDataTable({
+          values[["Kontoauszug"]]
+        })
+      }
+    })
+    observe({
       if(input$UploadKontoauszug>0){
         input.tbl<-values[["Kontoauszug"]]
         input.tbl<-input.tbl %>% mutate(Monat=month(dmy(Buchungsdatum)),Jahr=year(dmy(Buchungsdatum)), Kontonummer=input$Kontoauszug_Konto)
-        LastDate<-GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)
-        if(!is.na(LastDate[,1])){
-          message("not implemented")
+        LastDate<-GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1]
+        if(!is.na(LastDate)){
+          
         }
         if(WriteSQLData(input.tbl,"tbl_kontostand")){
           showModal(modalDialog(title = "Upload","Kontoauszug in Datenbank gespeichert!",easyClose = T))
