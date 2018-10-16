@@ -5,7 +5,7 @@ function(input, output) {
   ##Kontoverwaltung
     ## New Konto Tabelle generieren
     output$NewKontoData<-renderRHandsontable({
-      rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ=""))
+      rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ="",Anfangsbestand=0))
     })
     ## Datenbestand an Konto holen
     output$Kontos<-renderTable({
@@ -24,7 +24,7 @@ function(input, output) {
             })
             #updateSelectInput(session,inputId = "KontenListe",choices=GetSQLData("select Kontonummer from tbl_konto",F)[,1])
             output$NewKontoData<-renderRHandsontable({
-              rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ=""))
+              rhandsontable(tibble(Kontonummer="",Inhaber="",Bank="",Waehrung="",Typ="",Anfangsbestand=0))
             })
           } else {
             stop("Error adding Konto")
@@ -51,46 +51,53 @@ function(input, output) {
     output$Datenbestand<-renderText({
       minDate<-GetSQLData("select min(Buchungsdatum) from tbl_kontostand",F)
       maxDate<-GetSQLData("select max(Buchungsdatum) from tbl_kontostand",F)
-      paste("Es sind Daten vom",minDate,"bis",maxDate,"in der Datenbank")
+      paste("Es sind Daten vom",as_date(minDate[1,]),"bis",as_date(maxDate[1,]),"in der Datenbank")
     })
     observe({
       if(!is.null(input$NeuerKontoauszug)){
-        output$KontoauszugData<-renderDataTable({
+        output$KontoauszugData<-renderRHandsontable({
           input.tbl<-read_delim(input$NeuerKontoauszug$datapath,";", escape_double = FALSE, locale = locale(date_names = "de",decimal_mark = ",", grouping_mark = "."),trim_ws = TRUE)
           Column.mapping<-GetSQLData(paste("select QuellSpalte,ZielSpalte from tbl_parseZuordnung where Bank=(Select Bank from tbl_konto where Kontonummer=",input$Kontoauszug_Konto,")",sep=""),F)
           input.tbl<-input.tbl[,c(1,which(names(input.tbl) %in% Column.mapping$QuellSpalte))]
           colnames(input.tbl)<-c("Buchungsdatum",inner_join(tibble(QuellSpalte=names(input.tbl)),Column.mapping,by="QuellSpalte")$ZielSpalte)
           values[["Kontoauszug"]]<-input.tbl
-          datatable(input.tbl)
+          rhandsontable(input.tbl,width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
         })
       }
     })
-    observe({
+    observeEvent(input$ShowNA_Kontoauszug,{
       if(input$ShowNA_Kontoauszug=="Zeilen ohne Kategorie"){
-        if(is.null(values[["Kontoauszug"]]) | is.na(values[["Kontoauszug"]])){
+        if(is.null(values[["Kontoauszug"]])){
           showModal(modalDialog(title = "Kontoauszug","Es ist kein Kontoauszug geladen!",easyClose = T))
         } else {
-          output$KontoauszugData<-renderDataTable({
+          output$KontoauszugData<-renderRHandsontable({
             input.tbl<-values[["Kontoauszug"]]
-            input.tbl %>% filter(is.na(Schluessel))
+            rhandsontable(input.tbl %>% filter(is.na(Schluessel)),width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
           })
         }
       } else {
-        output$KontoauszugData<-renderDataTable({
-          values[["Kontoauszug"]]
+        print("triggered")
+        if(is.null(values[["Kontoauszug"]])){
+        } else {
+        values[["Kontoauszug"]][is.na(values[["Kontoauszug"]]$Schluessel),'Schluessel']<-hot_to_r(input$KontoauszugData)$Schluessel
+        output$KontoauszugData<-renderRHandsontable({
+          rhandsontable(values[["Kontoauszug"]],width=1800,rowHeaderWidth = 20) %>% hot_rows(fixedRowsTop = 1) %>% hot_cols(colWidths = 200)
         })
+        }
       }
     })
     observe({
       if(input$UploadKontoauszug>0){
-        input.tbl<-values[["Kontoauszug"]]
+        input.tbl<-hot_to_r(input$KontoauszugData)
         input.tbl<-input.tbl %>% mutate(Monat=month(dmy(Buchungsdatum)),Jahr=year(dmy(Buchungsdatum)), Kontonummer=input$Kontoauszug_Konto)
-        LastDate<-GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1]
+        LastDate<-dmy(GetSQLData(paste("select max(Buchungsdatum) from tbl_kontostand where Kontonummer=",input$Kontoauszug_Konto,sep=""),F)[,1])
+        input.tbl$Buchungsdatum<-dmy(input.tbl$Buchungsdatum)
         if(!is.na(LastDate)){
-          
+          input.tbl<- input.tbl %>% filter(Buchungsdatum>LastDate)
         }
         if(WriteSQLData(input.tbl,"tbl_kontostand")){
           showModal(modalDialog(title = "Upload","Kontoauszug in Datenbank gespeichert!",easyClose = T))
+          values[["Kontoauszug"]]<-NULL
         } else {
           stop("Error uploading File to DB")
         }
