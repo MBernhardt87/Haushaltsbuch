@@ -15,9 +15,9 @@ source("./Utils/BackendLogic.R")
 
 ## Adjust Options
 options(scipen=10)
-#options(shiny.launch.browser = TRUE)
-options(shiny.launch.browser = .rs.invokeShinyWindowViewer)
-
+options(shiny.launch.browser = TRUE)
+#options(shiny.launch.browser = .rs.invokeShinyWindowViewer)
+shiny::runApp()
 ## Launch Shiny App
-shinyApp(ui = source("ui.R"), server = source("server.R"))
+#shinyApp(ui = source("ui.R"), server = source("server.R"))
 

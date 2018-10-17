@@ -26,7 +26,7 @@ navbarPage("Haushaltsbuch",
                          )
                        )
                        ),
-              tabPanel("Kontoauszüge importieren",
+              tabPanel(id="Kontoauszug_Tab",title="Kontoauszüge importieren",
                        fluidPage(
                          fluidRow(
                            column(width=2,
@@ -63,7 +63,11 @@ navbarPage("Haushaltsbuch",
           p("Einnahmenverwaltung")
   ),
   tabPanel("Kontoübersicht",
-          p("Kontoübersicht")
+          verticalLayout(
+           selectInput("Konto_Kontouebersicht",label=NULL,choices=GetSQLData("select kontonummer from tbl_konto",F)[1,]),
+           rpivotTableOutput("Kontouebersicht")
+          )
+          
   ),
   tabPanel("Kontoverlauf",
           p("Kontoverlauf")
