@@ -1,6 +1,11 @@
 function(input, output) {
     values <- reactiveValues()
-
+    observe({
+      if(input$ActiveTab=="App beenden"){
+        showModal(modalDialog(title = "Exit",paste("Haushaltsbuch wurde beendet! \n Das Fenster kann geschlossen werden"),easyClose = T))
+        shiny::stopApp()
+      }
+    })
 ## Verwaltung
   ##Kontoverwaltung
     ## New Konto Tabelle generieren

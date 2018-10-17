@@ -1,4 +1,4 @@
-navbarPage("Haushaltsbuch",
+navbarPage("Haushaltsbuch",id="ActiveTab",
   tabPanel("Verwaltung",
            tabsetPanel(
               tabPanel("Kontenverwaltung",
@@ -74,5 +74,7 @@ navbarPage("Haushaltsbuch",
   ),
   tabPanel("Kontoanalyse",
           p("Kontoanalyse")
+  ),
+  tabPanel("App beenden"
   )
 )
