@@ -47,20 +47,8 @@ navbarPage("Haushaltsbuch",id="ActiveTab",
                                   )
                          )
                        )
-                       ),
-              tabPanel("Datenstand anzeigen",
-                       p("2")
-                       ),
-              tabPanel("Kategorienverwaltung",
-                       p("3")
                        )
            )
-  ),
-  tabPanel("Ausgabenverwaltung",
-          p("Ausgabenverwaltung")
-  ),
-  tabPanel("Einnahmenverwaltung",
-          p("Einnahmenverwaltung")
   ),
   tabPanel("Kontoübersicht",
           verticalLayout(
@@ -68,12 +56,6 @@ navbarPage("Haushaltsbuch",id="ActiveTab",
            rpivotTableOutput("Kontouebersicht")
           )
           
-  ),
-  tabPanel("Kontoverlauf",
-          p("Kontoverlauf")
-  ),
-  tabPanel("Kontoanalyse",
-          p("Kontoanalyse")
   ),
   tabPanel("App beenden"
   )
