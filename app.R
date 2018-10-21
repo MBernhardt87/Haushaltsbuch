@@ -13,6 +13,10 @@ library(readr)
 ##Source Util Files
 source("./Utils/BackendLogic.R")
 
+if(!file.exists("./vault.db")){
+  source("./Setup/setup.R")
+}
+
 ## Adjust Options
 options(scipen=10)
 options(shiny.launch.browser = TRUE)
